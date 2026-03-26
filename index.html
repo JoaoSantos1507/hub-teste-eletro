@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HUB Eletromidia - NOC</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+
+    <header class="topbar">
+        <div class="logo">
+            <img src="img/logo.png" alt="Logo Eletromidia" class="logo-img">
+            <h2>NOC</h2>
+        </div>
+        
+        <div class="topbar-actions">
+            <button id="theme-toggle" class="icon-btn" title="Alternar Tema">
+                <i class="ph ph-sun"></i>
+            </button>
+            <div class="user-profile">
+                <img src="https://ui-avatars.com/api/?name=Admin+NOC&background=ff6600&color=fff" alt="Admin">
+            </div>
+        </div>
+    </header>
+
+    <main class="hub-container">
+        <div class="bento-grid">
+            
+            <div class="bento-card card-large orange-glow">
+                <div class="card-header">
+                    <i class="ph ph-monitor"></i>
+                    <h3>Dashboard Geral</h3>
+                </div>
+                <div class="card-content">
+                    <p>Visão global da operação. (Módulo em desenvolvimento: gráficos de SLA, volumetria e status da rede em tempo real).</p>
+                    <span class="status-badge pulse">Aguardando Dados</span>
+                </div>
+            </div>
+
+            <div class="bento-card card-normal">
+                <div class="card-header">
+                    <i class="ph ph-headset"></i>
+                </div>
+                <div class="card-content">
+                    <h3>N1</h3>
+                    <p>Triagem inicial.</p>
+                </div>
+            </div>
+
+            <div class="bento-card card-normal" onclick="window.location.href='Analise N2/analisen2.html'">
+    <div class="card-header">
+        <i class="ph ph-wrench"></i>
+    </div>
+    <div class="card-content">
+        <h3>N2</h3>
+        <p>Análise técnica.</p>
+    </div>
+</div>
+
+            <div class="bento-card card-normal">
+                <div class="card-header">
+                    <i class="ph ph-cpu"></i>
+                </div>
+                <div class="card-content">
+                    <h3>N3</h3>
+                    <p>Engenharia e infra.</p>
+                </div>
+            </div>
+
+            <div class="bento-card card-normal">
+                <div class="card-header">
+                    <i class="ph ph-clipboard-text"></i>
+                </div>
+                <div class="card-content">
+                    <h3>Gerador OS</h3>
+                    <p>Controle de campo.</p>
+                </div>
+            </div>
+
+            <div class="bento-card card-wide highlight-border">
+                <div class="card-header">
+                    <i class="ph ph-chart-line-up"></i>
+                    <h3>Relatório Monitoramento</h3>
+                </div>
+                <div class="card-content">
+                    <p>Métricas de disponibilidade das telas, SLAs de atendimento e estatísticas de falhas diárias.</p>
+                </div>
+            </div>
+
+            <div class="bento-card card-wide dark-accent">
+                <div class="card-header">
+                    <i class="ph ph-graduation-cap"></i>
+                    <h3>Portal de Treinamento</h3>
+                </div>
+                <div class="card-content">
+                    <p>Acesso a videoaulas, documentações de sistemas e reciclagens técnicas para a equipe NOC.</p>
+                </div>
+            </div>
+
+           <div class="bento-card card-full admin-style" onclick="window.location.href='adm.html'">
+                <div class="card-header">
+                    <i class="ph ph-gear-six"></i>
+                    <div>
+                        <h3>Configuração ADM</h3>
+                        <p>Gestão de Usuários, Permissões, Banco de Dados e Parâmetros Globais do Sistema</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="scripts/main.js"></script>
+</body>
+</html>
