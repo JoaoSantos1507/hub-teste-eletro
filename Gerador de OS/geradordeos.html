@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de OS - Eletromidia NOC</title>
+    
+    <link rel="stylesheet" href="../css/style.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <style>
+        /* Ajuste do Grid para 3 colunas (Cards mais largos) */
+        .os-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-top: 20px;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        @media (max-width: 1100px) { .os-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 700px) { .os-grid { grid-template-columns: 1fr; } }
+
+        .os-card {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px; /* Aumentado para dar mais comprimento */
+            min-height: 280px; /* Garante que os cards sejam mais longos */
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .os-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            border-color: var(--primary);
+        }
+
+        .os-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        .os-status {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .status-agendada { background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid #3b82f6; }
+        .status-concluida { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981; }
+        .status-deslocamento { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid #f59e0b; }
+        .status-cancelada { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; }
+
+        .os-body { font-size: 13px; color: var(--text-muted); }
+        /* Nomes e Endereços em Negrito e Maiores */
+        .os-body-title { font-size: 18px; font-weight: 700; color: var(--text-main); margin-bottom: 4px; white-space: normal; }
+        .os-body-address { font-size: 14px; font-weight: 600; color: var(--text-main); margin-bottom: 12px; line-height: 1.4; }
+        
+        .os-actions {
+            margin-top: auto;
+            display: flex;
+            gap: 8px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 15px;
+        }
+
+        .toggle-segmented { display: flex; background: rgba(0,0,0,0.05); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
+        .light-mode .toggle-segmented { background: #f0f0f0; }
+        .toggle-segmented label { flex: 1; text-align: center; padding: 8px; font-size: 13px; cursor: pointer; border-right: 1px solid var(--border-color); transition: 0.3s; }
+        .toggle-segmented label:last-child { border-right: none; }
+        .toggle-segmented input { display: none; }
+        .toggle-segmented input:checked + span { font-weight: bold; }
+        .toggle-segmented label:has(input[value="eletromidia"]:checked) { background-color: rgba(255, 102, 0, 0.1); color: var(--primary); border-bottom: 2px solid var(--primary); }
+        .toggle-segmented label:has(input[value="terceiro"]:checked) { background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; border-bottom: 2px solid #3b82f6; }
+
+        /* Estilos do Modal de Configuração (Painel Avançado) */
+        .config-layout { display: flex; gap: 20px; height: 500px; }
+        .config-sidebar { width: 220px; border-right: 1px solid var(--border-color); overflow-y: auto; padding-right: 10px; }
+        .config-main { flex: 1; overflow-y: auto; padding-left: 10px; }
+        .provider-item { padding: 12px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; margin-bottom: 8px; font-size: 13px; font-weight: 500; transition: 0.2s; }
+        .provider-item:hover { background: var(--bg-surface-hover); }
+        .provider-item.active { background: rgba(59, 130, 246, 0.1); border-color: #3b82f6; color: #3b82f6; }
+        
+        .service-row { display: flex; align-items: center; justify-content: space-between; padding: 8px; border-bottom: 1px solid var(--border-color); font-size: 13px; }
+        .service-row:hover { background: var(--bg-surface-hover); }
+        
+        /* Modal LG ainda maior para as configs */
+        .modal-xl { width: 850px; max-width: 95%; }
+    </style>
+</head>
+<body> 
+    <header class="topbar">
+        <div style="display: flex; align-items: center; gap: 20px; flex: 1;">
+            <a href="../index.html" class="logo" style="display: flex; align-items: center; text-decoration: none;">
+                <img src="../img/logo.png" alt="Logo" class="logo-img" onerror="this.src='https://via.placeholder.com/40x40?text=Logo'">
+                <h2>NOC <span style="font-weight: 300; font-size: 0.8em; margin-left: 10px; padding-left: 10px; border-left: 1px solid var(--border-color, #ccc);">OS de Campo</span></h2>
+            </a>
+            
+            <div style="margin-left: 30px; flex: 1; max-width: 500px;">
+                <div style="position: relative;">
+                    <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 12px; color: var(--text-muted);"></i>
+                    <input type="text" id="buscaTopBar" class="form-control" placeholder="Pesquisar OS, Endereço, ELT, Chamado, Técnico..." style="padding-left: 35px; border-radius: 20px;">
+                </div>
+            </div>
+        </div>
+
+        <div class="topbar-actions">
+            <div style="display: flex; align-items: center; gap: 10px; margin-right: 20px; border-right: 1px solid var(--border-color); padding-right: 20px;">
+                <span style="font-size: 12px; color: var(--text-muted);">Logado como:</span>
+                <select id="simuladorCargo" class="form-control" style="width: auto; padding: 4px 8px; font-size: 12px; border-radius: 8px;">
+                    <option value="joao.santos">Admin (Vê Tudo)</option>
+                    <option value="rennan.avelino">Rennan Avelino</option>
+                    <option value="david.lima">David Lima</option>
+                    <option value="gilmar.alves">Gilmar Alves</option>
+                </select>
+            </div>
+            <button id="theme-toggle" class="icon-btn" title="Alternar Tema"><i class="ph ph-sun" id="theme-icon"></i></button>
+            <div class="user-profile"><img id="profileAvatar" src="" alt="Perfil"></div>
+        </div>
+    </header>
+
+    <main class="tool-container">
+        
+        <div class="toolbar" style="display: flex; justify-content: space-between; max-width: 1400px; margin: 0 auto; width: 100%;">
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <select id="filtroStatus" class="form-control" style="width: 150px;">
+                    <option value="">Status: Todos</option>
+                    <option value="agendada">Agendadas</option>
+                    <option value="deslocamento">Deslocamentos</option>
+                    <option value="concluida">Concluídas</option>
+                    <option value="cancelada">Canceladas</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 10px;" id="adminActions">
+                <button class="btn btn-outline" id="btnEquipeTecnica" style="display: none; border-radius: 8px;">
+                    <i class="ph ph-users"></i> Minha Equipe
+                </button>
+
+                <button class="icon-btn" id="btnConfigOS" title="Configurações de Custos por Prestador" style="border: 1px solid var(--border-color); border-radius: 8px;">
+                    <i class="ph ph-gear"></i>
+                </button>
+                <button class="btn btn-primary" id="btnNovaOS"><i class="ph ph-plus"></i> Nova OS</button>
+            </div>
+        </div>
+
+        <div class="os-grid" id="containerOS">
+            </div>
+    </main>
+
+    <div id="modalEquipe" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="ph ph-users"></i> Minha Equipe Técnica</h3>
+                <button type="button" class="icon-btn btn-fechar-modal"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEquipe" style="background: rgba(0,0,0,0.02); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+                    <div style="margin-bottom: 10px;">
+                        <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Nome Completo *</label>
+                        <input type="text" id="techNome" class="form-control" required placeholder="Ex: Lucas Silva">
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">WhatsApp *</label>
+                            <input type="text" id="techWhatsapp" class="form-control" required placeholder="11 90000-0000">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Placa do Veículo</label>
+                            <input type="text" id="techPlaca" class="form-control" placeholder="ABC-1234">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;"><i class="ph ph-plus"></i> Cadastrar Técnico</button>
+                </form>
+                
+                <div>
+                    <h4 style="font-size: 13px; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">Técnicos Vinculados a Você</h4>
+                    <div id="listaEquipe" style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalNovaOS" class="modal-overlay">
+        <div class="modal-box modal-lg" style="width: 600px;">
+            <div class="modal-header">
+                <h3><i class="ph ph-clipboard-text"></i> Gerar Nova OS</h3>
+                <button type="button" class="icon-btn btn-fechar-modal"><i class="ph ph-x"></i></button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="formNovaOS">
+                    <div style="display: grid; grid-template-columns: 100px 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Cód. Ponto</label>
+                            <input type="number" id="osCodigo" class="form-control" placeholder="1234" required>
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Nome do Ponto</label>
+                            <input type="text" id="osNome" class="form-control" placeholder="Ex: Shopping Central" required>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Endereço Completo</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="osEndereco" class="form-control" placeholder="Rua Exemplo, 123 - Bairro" required>
+                            <button type="button" id="btnCopiarEnd" class="btn btn-outline" title="Copiar Nome e Endereço"><i class="ph ph-copy"></i></button>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 20px; border-bottom: 1px dashed var(--border-color); padding-bottom: 15px;">
+                        <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Tipo de Serviço</label>
+                        <select id="osServico" class="form-control" required>
+                            <option value="">Selecione...</option>
+                            <option value="Troca de cabo">Troca de cabo</option>
+                            <option value="Troca de tela">Troca de tela</option>
+                            <option value="Validação de antena">Validação de antena</option>
+                            <option value="Religar régua">Religar régua</option>
+                            <option value="Reparo elétrico">Reparo elétrico</option>
+                            <option value="Remanejamento de rack">Remanejamento de rack</option>
+                            <option value="Vistoria">Vistoria</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                        <input type="text" id="osServicoOutros" class="form-control" placeholder="Descreva a causa/serviço..." style="display: none; margin-top: 10px;">
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Quem fará o serviço?</label>
+                        <div class="toggle-segmented">
+                            <label><input type="radio" name="osTipoTecnico" value="eletromidia" checked><span>Técnico Eletromidia</span></label>
+                            <label><input type="radio" name="osTipoTecnico" value="terceiro"><span>Técnico Terceiro</span></label>
+                        </div>
+                        <input type="text" id="osTecnicoEletro" class="form-control" placeholder="Nome do Técnico Eletromidia">
+                        <select id="osTecnicoTerceiro" class="form-control" style="display: none;"><option value="">Selecione o terceiro...</option></select>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">WhatsApp (Opcional)</label>
+                            <input type="text" id="osWhatsapp" class="form-control" placeholder="(11) 90000-0000">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Agendamento</label>
+                            <input type="datetime-local" id="osAgendamento" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 10px; background: rgba(0,0,0,0.02); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <label class="switch"><input type="checkbox" id="toggleElevador"><span class="slider"></span></label>
+                            <span style="font-size: 14px; font-weight: bold;">Envolve Empresa de Elevador?</span>
+                        </label>
+                        <div id="boxElevador" style="display: none; margin-top: 15px;">
+                            <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Selecione a Empresa</label>
+                            <select id="osEmpresaElevador" class="form-control"><option value="">Selecione...</option></select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline btn-fechar-modal">Cancelar</button>
+                <button type="submit" form="formNovaOS" class="btn btn-primary">Gerar OS</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalConfigOS" class="modal-overlay">
+        <div class="modal-box modal-xl">
+            <div class="modal-header">
+                <h3><i class="ph ph-currency-dollar"></i> Painel de Custos por Prestador</h3>
+                <button type="button" class="icon-btn btn-fechar-modal"><i class="ph ph-x"></i></button>
+            </div>
+            
+            <div class="modal-body p-0">
+                <div class="config-layout">
+                    <div class="config-sidebar" id="configSidebarList">
+                        </div>
+                    
+                    <div class="config-main" id="configMainArea" style="display: none;">
+                        <h4 id="configProviderName" style="font-size: 18px; margin-bottom: 15px; color: var(--primary);">Nome do Prestador</h4>
+                        
+                        <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                            <div style="flex: 1;">
+                                <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Tipo de Cobrança</label>
+                                <select id="configTipoCobranca" class="form-control">
+                                    <option value="fixo">Valor Fixo Único</option>
+                                    <option value="por_servico">Valor por Tipo de Serviço</option>
+                                </select>
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Valor Deslocamento (R$)</label>
+                                <input type="number" id="configValorDeslocamento" class="form-control" placeholder="100">
+                            </div>
+                        </div>
+
+                        <div id="painelValorFixo" style="background: rgba(0,0,0,0.02); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+                            <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 5px;">Valor Base Fixo (R$)</label>
+                            <input type="number" id="configValorFixo" class="form-control" placeholder="Ex: 300" style="max-width: 200px;">
+                            <p style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">Este valor será aplicado para qualquer OS concluída por este prestador, independente do serviço.</p>
+                        </div>
+
+                        <div id="painelValorServico" style="display: none;">
+                            <div style="background: rgba(59, 130, 246, 0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2); margin-bottom: 20px;">
+                                <h5 style="font-size: 13px; font-weight: bold; margin-bottom: 10px; color: #3b82f6;">Aplicação em Lote</h5>
+                                <div style="display: flex; gap: 10px; align-items: flex-end;">
+                                    <div style="flex: 1;">
+                                        <label style="font-size: 11px; color: var(--text-muted);">Definir Valor (R$)</label>
+                                        <input type="number" id="configLoteValor" class="form-control" placeholder="Ex: 250">
+                                    </div>
+                                    <button type="button" id="btnAplicarLote" class="btn btn-primary" style="background-color: #3b82f6; border-color: #3b82f6;">Aplicar aos Selecionados</button>
+                                </div>
+                            </div>
+
+                            <div style="border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;">
+                                <div style="display: flex; background: var(--bg-surface-hover); padding: 10px; font-weight: bold; font-size: 12px; border-bottom: 1px solid var(--border-color);">
+                                    <div style="width: 40px; text-align: center;"><input type="checkbox" id="checkTodosServicos"></div>
+                                    <div style="flex: 1;">Serviço</div>
+                                    <div style="width: 100px; text-align: right;">Valor (R$)</div>
+                                </div>
+                                <div id="listaServicosValores">
+                                    </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <span id="saveStatusFeedback" style="color: var(--success); font-size: 13px; font-weight: bold; margin-right: auto; display: none;">Salvo!</span>
+                <button type="button" class="btn btn-outline btn-fechar-modal">Fechar</button>
+                <button type="button" id="btnSalvarConfig" class="btn btn-primary">Salvar Configurações</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../scripts/Gerador de OS/usuarios.js"></script>
+    <script src="../scripts/Gerador de OS/geradordeos.js"></script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Administração - Eletromidia NOC</title>
+    
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <style>
+        .badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .badge-ativo { background-color: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .badge-bloqueado { background-color: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        
+        .role-master { border-left: 3px solid #8b5cf6; }
+        .role-vice { border-left: 3px solid #3b82f6; }
+        .role-user { border-left: 3px solid var(--primary); }
+        .role-tech { border-left: 3px solid var(--text-muted); }
+
+        /* Estilo da linha de Técnico Agregado */
+        .row-sub-tech td { background-color: rgba(0,0,0,0.02); }
+        .light-mode .row-sub-tech td { background-color: #f9f9f9; }
+    </style>
+
+    <script>
+        if (localStorage.getItem('noc_theme') === 'light') document.documentElement.classList.add('light-mode');
+    </script>
+</head>
+<body> 
+    <header class="topbar">
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <a href="index.html" class="logo" style="display: flex; align-items: center;">
+                <img src="img/logo.png" alt="Logo Eletromidia" class="logo-img" onerror="this.src='https://via.placeholder.com/40x40?text=Logo'">
+                <h2>NOC <span style="font-weight: 300; font-size: 0.8em; margin-left: 10px; padding-left: 10px; border-left: 1px solid var(--border-color, #ccc);">Admin</span></h2>
+            </a>
+        </div>
+
+        <div class="topbar-actions">
+            <div style="display: flex; align-items: center; gap: 10px; margin-right: 20px; border-right: 1px solid var(--border-color); padding-right: 20px;">
+                <span style="font-size: 12px; color: var(--text-muted);">Simular visão:</span>
+                <select id="simuladorCargo" class="form-control" style="width: auto; padding: 4px 8px; font-size: 12px;">
+                    <option value="Admin master">Admin master</option>
+                    <option value="Vice admin">Vice admin</option>
+                </select>
+            </div>
+
+            <button id="theme-toggle" class="icon-btn" title="Alternar Tema">
+                <i class="ph ph-sun" id="theme-icon"></i> 
+            </button>
+            <div class="user-profile">
+                <img id="profileAvatar" src="" alt="Admin">
+            </div>
+        </div>
+    </header>
+
+    <main class="tool-container">
+        <div class="toolbar" style="display: flex; justify-content: space-between;">
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <input type="text" id="buscaUsuario" class="form-control" placeholder="Buscar por nome, usuário ou email..." style="min-width: 300px;">
+                <select id="filtroStatus" class="form-control" style="width: 150px;">
+                    <option value="">Todos os Status</option>
+                    <option value="Ativo">Ativos</option>
+                    <option value="Bloqueado">Bloqueados</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-outline" id="btnConfigGlobais"><i class="ph ph-globe"></i> Regras Globais</button>
+                <button class="btn btn-primary" id="btnNovoUsuario"><i class="ph ph-user-plus"></i> Novo Usuário</button>
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="noc-table">
+                <thead>
+                    <tr>
+                        <th>Nome / Usuário</th>
+                        <th>Email / Contato</th>
+                        <th>Nível de Acesso</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaUsuariosBody">
+                    </tbody>
+            </table>
+        </div>
+    </main>
+
+    <div id="modalUsuario" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="modalUsuarioTitulo"><i class="ph ph-user"></i> Adicionar Usuário</h3>
+                <button type="button" class="icon-btn btn-fechar-modal"><i class="ph ph-x"></i></button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="formUsuario">
+                    <input type="hidden" id="userId">
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="font-size: 13px; color: var(--text-muted); margin-bottom: 5px; display: block;">Nome Completo</label>
+                        <input type="text" id="userNome" class="form-control" required placeholder="Ex: João Silva">
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="font-size: 13px; color: var(--text-muted); margin-bottom: 5px; display: block;">Nome de Usuário (Login)</label>
+                        <input type="text" id="userUsername" class="form-control" required placeholder="Ex: joao.silva">
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="font-size: 13px; color: var(--text-muted); margin-bottom: 5px; display: block;">Email Corporativo (Opcional para Técnicos)</label>
+                        <input type="email" id="userEmail" class="form-control" placeholder="joao.silva@eletromidia.com.br">
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="font-size: 13px; color: var(--text-muted); margin-bottom: 5px; display: block;">Categoria / Nível de Acesso</label>
+                        <select id="userRole" class="form-control" required></select>
+                    </div>
+
+                    <div style="margin-bottom: 15px;" id="containerSenha">
+                        <label style="font-size: 13px; color: var(--text-muted); margin-bottom: 5px; display: block;">Senha de Acesso</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="userSenha" class="form-control" placeholder="Defina uma senha provisória">
+                            <button type="button" class="btn btn-outline" title="Gerar Senha Aleatória" onclick="document.getElementById('userSenha').value = Math.random().toString(36).slice(-8);">
+                                <i class="ph ph-arrows-clockwise"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline btn-fechar-modal">Cancelar</button>
+                <button type="submit" form="formUsuario" class="btn btn-primary">Salvar Usuário</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalGlobais" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="ph ph-globe"></i> Regras de Segurança Globais</h3>
+                <button type="button" class="icon-btn btn-fechar-modal"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 20px; background: rgba(0,0,0,0.02); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <label style="font-size: 14px; font-weight: bold; margin-bottom: 10px; display: block;">Autenticação Obrigatória Eletromidia</label>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Todos que necessitam de login com Google Authenticator devem usar o login Eletromidia.</p>
+                    <input type="text" class="form-control" value="@eletromidia.com.br" disabled title="Regra fixa do sistema">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline btn-fechar-modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/adm.js"></script>
+</body>
+</html>
