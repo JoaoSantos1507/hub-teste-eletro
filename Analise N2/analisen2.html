@@ -9,6 +9,11 @@
     
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        if (!localStorage.getItem('noc_userLogado')) {
+            window.location.href = '../login.html'; // Nota os ../ para voltar à raiz
+        }
+    </script>
     
     <style>
         /* Estilos das Tags de Material na Tabela */
