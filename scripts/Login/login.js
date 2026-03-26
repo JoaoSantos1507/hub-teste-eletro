@@ -7,78 +7,61 @@ document.addEventListener('DOMContentLoaded', () => {
     const passwordInput = document.getElementById('password');
     const btnLogin = document.getElementById('btnLogin');
 
-    // BANCO DE DADOS INTERNO PARA VALIDAÇÃO IMEDIATA
-    const usuariosPermitidos = [
-        { 
-            id: 1, 
-            nome: "João Santos", 
-            username: "joao.santos", 
-            senha: "sJ0r@jt5_", 
-            role: "Admin master" 
-        },
-        { 
-            id: 2, 
-            nome: "Rennan Avelino", 
-            username: "rennan.avelino", 
-            senha: "123", 
-            role: "Terceiro técnico de campo" 
-        },
-        { 
-            id: 3, 
-            nome: "David Lima", 
-            username: "david.lima", 
-            senha: "123", 
-            role: "Terceiro empresa de elevador" 
-        }
-    ];
-
-    // Mostrar/Ocultar Senha
+    // Funcionalidade de mostrar/ocultar palavra-passe
     if (btnTogglePassword) {
         btnTogglePassword.addEventListener('click', () => {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
-            btnTogglePassword.querySelector('i').className = type === 'password' ? 'ph ph-eye' : 'ph ph-eye-slash';
+            
+            // Altera o ícone de olho
+            const icon = btnTogglePassword.querySelector('i');
+            icon.className = type === 'password' ? 'ph ph-eye' : 'ph ph-eye-slash';
         });
     }
 
-    // Lógica de Login
-    loginForm.addEventListener('submit', (e) => {
-        e.preventDefault();
+    // Submissão do formulário
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault(); // Impede a página de recarregar
         
-        const usernameDigitado = document.getElementById('username').value.trim();
-        const senhaDigitada = passwordInput.value;
+        const username = document.getElementById('username').value.trim();
+        const password = passwordInput.value;
 
+        // Esconde o erro e mostra carregamento
         errorMsg.style.display = 'none';
         btnLogin.disabled = true;
-        btnLogin.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Autenticando...';
+        btnLogin.innerHTML = '<i class="ph ph-spinner ph-spin"></i> A validar...';
 
-        // Procura o usuário no banco interno
-        const usuarioEncontrado = usuariosPermitidos.find(u => 
-            u.username === usernameDigitado && u.senha === senhaDigitada
-        );
+        try {
+            // Envia os dados para o ficheiro PHP (Backend)
+            const response = await fetch('scripts/Login/login.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username: username, password: password })
+            });
 
-        // Simula um pequeno atraso para parecer processamento real
-        setTimeout(() => {
-            if (usuarioEncontrado) {
-                // Criar objeto de sessão (sem a senha por segurança)
-                const sessaoUsuario = {
-                    id: usuarioEncontrado.id,
-                    nome: usuarioEncontrado.nome,
-                    username: usuarioEncontrado.username,
-                    role: usuarioEncontrado.role
-                };
+            // Lê a resposta do PHP
+            const data = await response.json();
 
-                // SALVA NA MEMÓRIA DO NAVEGADOR
-                localStorage.setItem('noc_userLogado', JSON.stringify(sessaoUsuario));
-                
-                // REDIRECIONA
+            if (data.success) {
+                // Sucesso: Salva os dados do utilizador (sem a senha) e redireciona
+                localStorage.setItem('noc_userLogado', JSON.stringify(data.user));
                 window.location.href = 'index.html';
             } else {
-                errorMsg.textContent = "Utilizador ou senha incorretos.";
+                // Erro: Mostra a mensagem vinda do PHP
+                errorMsg.textContent = data.message || 'Credenciais inválidas.';
                 errorMsg.style.display = 'block';
-                btnLogin.disabled = false;
-                btnLogin.innerHTML = '<span>Entrar no NOC</span><i class="ph ph-sign-in"></i>';
             }
-        }, 800);
+        } catch (error) {
+            console.error("Erro na requisição:", error);
+            // Este erro ocorre se o JS não encontrar o PHP (ex: rodando direto no PC sem XAMPP ou no GitHub)
+            errorMsg.textContent = 'Erro ao contactar o servidor (Verifique se o PHP está a rodar).';
+            errorMsg.style.display = 'block';
+        } finally {
+            // Restaura o botão
+            btnLogin.disabled = false;
+            btnLogin.innerHTML = '<span>Entrar no NOC</span><i class="ph ph-sign-in"></i>';
+        }
     });
 });
