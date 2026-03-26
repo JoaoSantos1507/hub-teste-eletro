@@ -7,65 +7,78 @@ document.addEventListener('DOMContentLoaded', () => {
     const passwordInput = document.getElementById('password');
     const btnLogin = document.getElementById('btnLogin');
 
-    // Funcionalidade de mostrar/ocultar palavra-passe
-    btnTogglePassword.addEventListener('click', () => {
-        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordInput.setAttribute('type', type);
-        
-        // Altera o ícone de olho fechado/aberto
-        const icon = btnTogglePassword.querySelector('i');
-        icon.className = type === 'password' ? 'ph ph-eye' : 'ph ph-eye-slash';
-    });
+    // BANCO DE DADOS INTERNO PARA VALIDAÇÃO IMEDIATA
+    const usuariosPermitidos = [
+        { 
+            id: 1, 
+            nome: "João Santos", 
+            username: "joao.santos", 
+            senha: "sJ0r@jt5_", 
+            role: "Admin master" 
+        },
+        { 
+            id: 2, 
+            nome: "Rennan Avelino", 
+            username: "rennan.avelino", 
+            senha: "123", 
+            role: "Terceiro técnico de campo" 
+        },
+        { 
+            id: 3, 
+            nome: "David Lima", 
+            username: "david.lima", 
+            senha: "123", 
+            role: "Terceiro empresa de elevador" 
+        }
+    ];
 
-    // Submissão do formulário
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault(); // Impede a página de recarregar
-        
-        const username = document.getElementById('username').value.trim();
-        const password = passwordInput.value;
+    // Mostrar/Ocultar Senha
+    if (btnTogglePassword) {
+        btnTogglePassword.addEventListener('click', () => {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            btnTogglePassword.querySelector('i').className = type === 'password' ? 'ph ph-eye' : 'ph ph-eye-slash';
+        });
+    }
 
-        // Limpa mensagens anteriores
+    // Lógica de Login
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const usernameDigitado = document.getElementById('username').value.trim();
+        const senhaDigitada = passwordInput.value;
+
         errorMsg.style.display = 'none';
-        
-        // Estado de carregamento do botão
         btnLogin.disabled = true;
-        btnLogin.innerHTML = '<i class="ph ph-spinner ph-spin"></i> A validar...';
+        btnLogin.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Autenticando...';
 
-        try {
-            // Envia os dados para o ficheiro PHP
-            const response = await fetch('scripts/Login/login.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ username: username, password: password })
-            });
+        // Procura o usuário no banco interno
+        const usuarioEncontrado = usuariosPermitidos.find(u => 
+            u.username === usernameDigitado && u.senha === senhaDigitada
+        );
 
-            const data = await response.json();
+        // Simula um pequeno atraso para parecer processamento real
+        setTimeout(() => {
+            if (usuarioEncontrado) {
+                // Criar objeto de sessão (sem a senha por segurança)
+                const sessaoUsuario = {
+                    id: usuarioEncontrado.id,
+                    nome: usuarioEncontrado.nome,
+                    username: usuarioEncontrado.username,
+                    role: usuarioEncontrado.role
+                };
 
-            if (data.success) {
-                // Login efetuado com sucesso!
-                // Salvar dados do utilizador no LocalStorage para usar no HUB
-                localStorage.setItem('noc_userLogado', JSON.stringify(data.user));
+                // SALVA NA MEMÓRIA DO NAVEGADOR
+                localStorage.setItem('noc_userLogado', JSON.stringify(sessaoUsuario));
                 
-                // Redireciona para o HUB
+                // REDIRECIONA
                 window.location.href = 'index.html';
             } else {
-                // Erro (utilizador não encontrado ou palavra-passe incorreta)
-                mostrarErro(data.message || 'Credenciais inválidas.');
+                errorMsg.textContent = "Utilizador ou senha incorretos.";
+                errorMsg.style.display = 'block';
+                btnLogin.disabled = false;
+                btnLogin.innerHTML = '<span>Entrar no NOC</span><i class="ph ph-sign-in"></i>';
             }
-        } catch (error) {
-            console.error("Erro na requisição:", error);
-            mostrarErro('Erro de comunicação com o servidor. Tente novamente.');
-        } finally {
-            // Restaura o botão
-            btnLogin.disabled = false;
-            btnLogin.innerHTML = '<span>Entrar no NOC</span><i class="ph ph-sign-in"></i>';
-        }
+        }, 800);
     });
-
-    function mostrarErro(mensagem) {
-        errorMsg.textContent = mensagem;
-        errorMsg.style.display = 'block';
-    }
 });
